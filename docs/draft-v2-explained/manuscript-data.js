@@ -11,7 +11,7 @@ globalThis.DraftManuscript = {
     "prepared_artifact_id": "566a4493bfaf9f34b48c7e1671cfc9dacc5dcd6bf4915efd035815ceec76a40c"
   },
   "source_files": {
-    "paper/draft-v2/project-report-cn.tex": "6d119081517a948d18057eefe121245d83a5a8cba0304ebac21f9e0a0d7698e9",
+    "paper/draft-v2/project-report.tex": "ff7d5c7ececcfd3522f6486a3211060b58dbd446014394ca2f6c67b1abc02858",
     "paper/draft-v2/BASIC-20261108-EVIDENCE.md": "b81dd0485156d9a29b7e283fab1be7e677432b95d225246cf272ee2a010904fe",
     "paper/draft-v2/figures/basic-20261108/deletion-differences.pdf": "7707cb990bfc297c069339e4d1543f3a70a4930bf326af884bb3f9c72bed8ca9",
     "paper/draft-v2/figures/basic-20261108/mass-shapes.pdf": "2652429bd80559042c1342d3174b809bd560d96b224beeb77a81d7a23c671f6d",

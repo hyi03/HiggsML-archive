@@ -4,7 +4,7 @@
   const {slides,t,en} = DraftContent;
   const $ = selector => document.querySelector(selector);
   const count = slides.length;
-  const sourceLink = slide => `${slide.teaching?t('教学扩展（基于报告）','Teaching expansion (based on report)'):t('当前基础报告','Current basic report')}: <a href="../../paper/draft-v2/${slide.sourceFile || 'project-report-cn.tex'}" target="_blank" rel="noopener">${slide.source}</a>`;
+  const sourceLink = slide => `${slide.teaching?t('教学扩展（基于报告）','Teaching expansion (based on report)'):t('当前基础报告','Current basic report')}: <a href="../../paper/draft-v2/${slide.sourceFile || 'project-report.tex'}" target="_blank" rel="noopener">${slide.source}</a>`;
   $('#deck').innerHTML = slides.map((s,i) => `<section class="slide" id="slide-${i+1}" aria-labelledby="title-${i+1}"${i?' hidden':''}><header class="slide-header"><p class="section-label">${s.chapter}${s.supervisorRelated?` <span class="supervisor-badge">${t('导师要求 · 直接回应','Supervisor request · Direct response')}</span>`:''}</p><${i?'h2':'h1'} id="title-${i+1}">${s.title}</${i?'h2':'h1'}><p class="lead">${s.lead}</p></header><div class="slide-content"><div class="slide-body" tabindex="0" aria-label="${t('本页图表与要点','Figures and key points')}">${s.body}</div><div class="slide-explanation" role="region" tabindex="0" aria-label="${t('本页讲解','Explanation for this slide')}">${s.notes}</div></div><footer class="slide-footer"><span>${sourceLink(s)}</span><span>${s.teaching?t('人工教学解释 · 非研究结果','Teaching explanation · Not research results'):t('draft001 · 论文显示精度 · 探索性','draft001 · Manuscript display precision · Exploratory')} · ${String(i+1).padStart(2,'0')} / ${count}</span></footer></section>`).join('');
   $('#page').max = count;
   $('#page-count').textContent = count;

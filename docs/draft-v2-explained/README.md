@@ -2,7 +2,7 @@
 
 Open [Chinese](index.html) or [English](index-en.html) directly in a browser.
 Both editions have 48 aligned slides following the seven chapters of the updated
-[Chinese basic report](../../paper/draft-v2/project-report-cn.tex), dated
+[English basic report](../../paper/draft-v2/project-report.tex), dated
 8 November 2026. The intended audience is advanced physics undergraduates and
 readers with no neural-network background. Basic physics and algebra are assumed. No server, local runs,
 ignored asset bundle, installation or internet is required.

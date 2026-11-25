@@ -10,7 +10,7 @@ export function checkDisplay(root){
  const zh=load('zh-CN'),en=load('en'),D=JSON.parse(JSON.stringify(zh.DraftManuscript));
  assert.equal(D.report_artifact_id,'a7e610a163e5d155705014201b7ee330323e3bf69309e0e89b2496edba5d4317');
  assert.equal(D.local_aggregate_verification,false);assert.equal(D.rows.length,15);assert.equal(D.deltas.length,12);
- const report=read('../../paper/draft-v2/project-report-cn.tex'),evidence=read('../../paper/draft-v2/BASIC-20261108-EVIDENCE.md');
+ const report=read('../../paper/draft-v2/project-report.tex'),evidence=read('../../paper/draft-v2/BASIC-20261108-EVIDENCE.md');
  for(const [f,hash]of Object.entries(D.source_files))assert.equal(createHash('sha256').update(readFileSync(path.resolve(root,'../..',f))).digest('hex'),hash,f);
  for(const id of [D.report_artifact_id,...Object.values(D.binding)])assert.ok(evidence.includes(id));
  for(const row of D.rows)assert.ok(report.includes([row.subset,row.seed,row.S,row.B,row.RS,row.RB,row.Q].join(' & ')));
@@ -21,7 +21,7 @@ export function checkDisplay(root){
  assert.deepEqual(Array.from(zh.DraftContent.slides,s=>s.id),Array.from(en.DraftContent.slides,s=>s.id));
  for(const c of [zh,en]){const slides=c.DraftContent.slides;assert.equal(slides.length,48);assert.equal(new Set(slides.map(s=>s.id)).size,48);assert.equal(slides.filter(s=>s.supervisorRelated).length,4);
  for(const s of slides){const html=s.body+s.notes;assert.ok(s.title&&s.lead&&s.source&&s.notes.includes('<p>'));assert.doesNotMatch(html,/\bNaN\b|\bundefined\b/);if(c.DraftContent.en)assert.doesNotMatch(s.title+s.lead+html,/[\u4e00-\u9fff]/);
- assert.equal(s.sourceFile,'project-report-cn.tex');assert.doesNotMatch(s.body,/W₆₈|W68|60\.4%|67\.2%|24,000|1\.464392/);
+ assert.equal(s.sourceFile,'project-report.tex');assert.doesNotMatch(s.body,/W₆₈|W68|60\.4%|67\.2%|24,000|1\.464392/);
  for(const m of html.matchAll(/(?:href|src|data)="([^"]+)"/g)){if(m[1].startsWith('#'))assert.notEqual(c.DraftTeaching.pageFromHash(slides,m[1],0),0);else assert.ok(existsSync(path.resolve(root,m[1].split('#')[0])),m[1]);}}
  const expectedAfter={
   'event-vector':'features','network-purpose':'model-widget','neuron':'network-purpose',

@@ -9,16 +9,15 @@ non-independent and coverage-unvalidated.
 
 ## English project report
 
-[project-report.tex](project-report.tex) is the English counterpart of the current
-[Chinese basic report](project-report-cn.tex), synchronized on 8 November 2026.
-Both use the same verified local rerun, fifteen models, twelve deletion-contrast
-rows and three figures in `figures/basic-20261108/`. Their seven main sections
+[project-report.tex](project-report.tex) is the English basic report synchronized
+on 8 November 2026. It uses the verified local rerun, fifteen models, twelve
+deletion-contrast rows and three figures in `figures/basic-20261108/`. Its seven main sections
 cover purpose, samples, feature groups and the MLP, metrics and a worked example,
 complete results, mass spectra, and conclusions. The three-hidden-layer model,
 training and frozen thresholds are explained at senior-undergraduate level.
 Historical interval studies appear only as a short source-linked supplement.
 
-Compile this standalone report with LuaLaTeX, as for the Chinese counterpart:
+Compile this standalone report with LuaLaTeX:
 
 ```sh
 latexmk -lualatex -interaction=nonstopmode -halt-on-error -outdir=.build/project-report project-report.tex
@@ -41,56 +40,13 @@ for clipping, overlap and table/figure readability. These checks establish
 translation and document consistency, not independent scientific validation.
 No training, scoring, fitting, pseudoexperiments or raw-event access was needed.
 
-## Chinese project report
-
-The Chinese reports were reorganized on 1 November 2026 after the annotated-PDF
-revision and the limited statistical update. The first report was further
-simplified on 7 November 2026. They now use two reading routes:
-
-- [project-report-cn.tex](project-report-cn.tex) compares feature groups through
-  signed signal/background yields, retention fractions, signal-to-background
-  ratios, and within-seed reduced-minus-ABCD differences. Its mathematics uses
-  sums, ratios, differences, medians and minimum–maximum ranges. All fifteen
-  model rows, the four deletion comparisons and the three-panel difference plot
-  now use the local rerun verified on 8 November 2026. Yields and spectra use
-  that same bound report, with a separate evidence record and asset directory.
-  Historical interval methods and their undercoverage limits are summarized in
-  one appendix paragraph with a link to the existing evidence record.
-- [project-report-B-cn.tex](project-report-B-cn.tex) is a separate
-  question-driven report: what the network selects, how feature-group deletion
-  changes nominal intervals, and how robust those differences are. Each question
-  connects the necessary method to its evidence and interpretation limits.
-
-Both versions distinguish training, AUC checkpoint selection, validation-background
-threshold selection, frozen evaluation, and signed-yield accounting. The basic report preserves all current-result table bodies and three figure
-assets; its historical interval table has been replaced by a source reference. Detailed branch,
-reconstruction, selection-source, normalization, and training information remains
-in the appendices. Sample production details and exact release preselection are
-still unconfirmed. The English basic report now follows the same structure and
-source as the Chinese basic report; the B report and REVTeX manuscript remain separate versions.
-The earlier ten-page layout is superseded; chapter and appendix references now
-follow each report's structure. The comparison that motivated these changes is
-in [structure-options-cn.md](structure-options-cn.md).
-
-```sh
-latexmk -lualatex -interaction=nonstopmode -halt-on-error -outdir=.build/project-report-cn project-report-cn.tex
-cp .build/project-report-cn/project-report-cn.pdf project-report-cn.pdf
-
-latexmk -lualatex -interaction=nonstopmode -halt-on-error -outdir=.build/project-report-B-cn project-report-B-cn.tex
-cp .build/project-report-B-cn/project-report-B-cn.pdf project-report-B-cn.pdf
-```
-
-Both Chinese PDFs and build directories remain ignored; no scientific run is needed.
-Choose the corresponding `.tex` file explicitly as the editor's build target.
-
 ### Completed basic comparison — 8 November 2026
 
-The English and Chinese basic reports now use the local `runs/h4l-draft-v2-draft001/report/`
+The English basic report uses the local `runs/h4l-draft-v2-draft001/report/`
 with report identity `a7e610a163e5d155705014201b7ee330323e3bf69309e0e89b2496edba5d4317`.
 See [BASIC-20261108-EVIDENCE.md](BASIC-20261108-EVIDENCE.md) for bindings, checks,
 full-precision-derived values and asset hashes. The reused run name does not
-identify the old manuscript's artifacts. The historical interval appendix,
-B report and REVTeX manuscript retain their original sources.
+identify the old manuscript's artifacts. The historical interval appendix and REVTeX manuscript retain their original sources.
 
 All fifteen model results and the inclusive reference are numerically valid.
 The report/evaluation aggregate copies, protocol, frozen model identities,
@@ -141,12 +97,11 @@ all fifteen models, twelve contrasts and mass-region fractions) and all three
 figure hashes were checked unchanged. The retention-error formula agrees with
 all four existing spectrum aggregates. This is an editorial and aggregate
 consistency check; it does not rerun or requalify the scientific analysis.
-The revised 16-page Chinese PDF compiles without warnings or overfull/underfull boxes.
-A page overview and full-page views of the revised examples, interpretation and
-appendices were checked without observed clipping or overlap.
 
 ## Current files
 
+- [project-report-en-concise.tex](project-report-en-concise.tex) is the concise English progress report.
+- [project-report-en-revised.tex](project-report-en-revised.tex) is the detailed revised English report.
 - [main.tex](main.tex): manuscript, abstract, methods, results and references.
 - [workflow.tex](workflow.tex): executed workflow diagram.
 - [draft001-tables.tex](draft001-tables.tex): fifteen widths and twelve paired contrasts.

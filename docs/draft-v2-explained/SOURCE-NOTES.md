@@ -2,7 +2,7 @@
 
 ## Current source
 
-Both language editions follow `paper/draft-v2/project-report-cn.tex`, especially
+Both language editions follow `paper/draft-v2/project-report.tex`, especially
 its fifteen-row basic metric table, twelve-row paired-contrast table, worked
 yield/error example and seven-chapter reading order. The main figures come from
 `paper/draft-v2/figures/basic-20261108/`. The evidence index is

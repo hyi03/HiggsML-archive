@@ -22,7 +22,7 @@ globalThis.DraftContent = (() => {
 
   const ch = [t('01 · 目的与范围','01 · Purpose and scope'),t('02 · 样本与选择','02 · Samples and selection'),t('03 · 特征与网络','03 · Features and network'),t('04 · 指标与示例','04 · Metrics and examples'),t('05 · 完整比较','05 · Full comparison'),t('06 · 质量谱','06 · Mass spectra'),t('07 · 结论与来源','07 · Conclusions and sources')];
   const slides=[];
-  const add=(id,chapter,title,lead,body,explanation,source,sourceFile='project-report-cn.tex')=>slides.push({id,chapter,title,lead,body,notes:explanation,source,sourceFile,teaching:source.startsWith('Teaching')});
+  const add=(id,chapter,title,lead,body,explanation,source,sourceFile='project-report.tex')=>slides.push({id,chapter,title,lead,body,notes:explanation,source,sourceFile,teaching:source.startsWith('Teaching')});
   const fractionPercent = (name,index) => D.mass_fractions_percent[name][index].toFixed(1) + '%';
 
 add('overview',ch[0],t('不同特征组怎样影响筛选？','How do feature groups affect selection?'),
@@ -78,7 +78,7 @@ add('analysis-roadmap',ch[0],t('从网络分数到基础比较','From network sc
   add('workflow',ch[2],t('从数据到报告：已执行的顺序','From data to report: the executed sequence'),
     t('所有十五个模型共同冻结，随后才读取最终评估载荷。','Freeze all fifteen models together before reading final-evaluation payloads.'),
     flow([t('共同选择与事件组划分','Common selection and grouped allocation'),t('训练十五个模型','Train fifteen models'),t('验证 checkpoint 与阈值','Validate checkpoints and cuts'),t('统一冻结＋访问批准','Common freeze and access approval'),t('最终评估及绑定报告','Final evaluation and bound report')])+box(t('冻结前，训练读取器在 JSON 解码前跳过最终评估事件载荷。','Before freeze, the training reader skips evaluation payloads before JSON decoding.')),
-    notes('<p>模型参数、标准化参数、阈值、数据身份和报告规则全部绑定到同一冻结工件。本次最终评估之前已有绑定该冻结的明确用户批准。</p><p>评估之后没有更换模型、移动阈值、合并类别或调整分箱。若支持检查失败，程序保留失败状态，而不是根据评估结果修改规则。</p>', '<p>Model parameters, scalers, thresholds, data identities and reporting rules are bound to a common freeze. Explicit user approval tied to that freeze preceded this final evaluation.</p><p>No model, cut, category or binning was changed after evaluation. Unsupported results remain failures rather than triggering outcome-driven rule changes.</p>'), '§ 3','project-report-cn.tex');
+    notes('<p>模型参数、标准化参数、阈值、数据身份和报告规则全部绑定到同一冻结工件。本次最终评估之前已有绑定该冻结的明确用户批准。</p><p>评估之后没有更换模型、移动阈值、合并类别或调整分箱。若支持检查失败，程序保留失败状态，而不是根据评估结果修改规则。</p>', '<p>Model parameters, scalers, thresholds, data identities and reporting rules are bound to a common freeze. Explicit user approval tied to that freeze preceded this final evaluation.</p><p>No model, cut, category or binning was changed after evaluation. Unsupported results remain failures rather than triggering outcome-driven rule changes.</p>'), '§ 3','project-report.tex');
 
   add('features',ch[2],t('十九个输入，四组物理描述','Nineteen inputs in four physical groups'),
     t('这些组的信息彼此重叠；显式 m₄ℓ 不在输入内。','The groups overlap in information; explicit m₄ℓ is not an input.'),
