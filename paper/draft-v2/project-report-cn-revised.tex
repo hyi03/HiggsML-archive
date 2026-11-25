@@ -1,0 +1,1065 @@
+% !TeX root = project-report-cn-revised.tex
+% !TeX program = lualatex
+% Build: latexmk -lualatex -interaction=nonstopmode -halt-on-error -outdir=.build/project-report-cn-revised project-report-cn-revised.tex
+\documentclass[11pt,a4paper,fontset=fandol,scheme=plain]{ctexart}
+\usepackage[margin=21mm,headheight=14pt]{geometry}
+\usepackage{lmodern,amsmath,amssymb,graphicx,booktabs,array,tabularx}
+\usepackage{xcolor,enumitem,fancyhdr,caption,xurl,placeins,float,needspace}
+\usepackage[colorlinks=true,linkcolor=teal,citecolor=teal,urlcolor=teal]{hyperref}
+\definecolor{reportblue}{HTML}{18536B}
+\hypersetup{pdftitle={不同特征组对四轻子模拟样本筛选效果的影响},pdfauthor={HiggsML 项目}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{reportblue}{HiggsML | 项目报告}}
+\fancyhead[R]{\small 修订于 2026 年 11 月 15 日}
+\fancyfoot[C]{\thepage}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlength{\emergencystretch}{2em}
+\setlist[itemize]{leftmargin=1.4em,itemsep=3pt,topsep=4pt}
+\captionsetup{font=small,labelfont=bf,justification=raggedright,singlelinecheck=false}
+\captionsetup[table]{name=表}
+\captionsetup[figure]{name=图}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\ctexset{
+  section={format=\Large\bfseries\color{reportblue},beforeskip=16pt,afterskip=8pt},
+  subsection={format=\large\bfseries\color{reportblue},beforeskip=12pt,afterskip=5pt}}
+\setcounter{tocdepth}{1}
+\renewcommand{\contentsname}{阅读目录}
+\raggedbottom
+\widowpenalty=10000
+\setlength{\textfloatsep}{12pt}
+\setlength{\intextsep}{12pt}
+\newcommand{\gev}{\,\mathrm{GeV}}
+
+\begin{document}
+{\LARGE\bfseries\color{reportblue} 不同特征组对四轻子模拟样本筛选效果的影响\par}
+\vspace{6pt}
+项目报告 · 特征组删除比较 · 修订于 2026 年 11 月 15 日
+
+
+\section{研究目的与比较范围}
+
+本研究考察运动学输入的选择如何影响 $H\to ZZ^*\to4\ell$ 模拟样本的分类筛选。
+在共同的样本、网络隐藏层结构和阈值规则下，分别删除一组输入并重新训练，
+比较信号产额保留率、背景产额保留率和筛选后的信背比，再检查部分模型的质量谱变化。
+这一设计用于描述特征组删除后整套筛选方法的变化，不将差值解释为独立的物理贡献。
+
+网络输入分为四组：A 为四个轻子的横动量与赝快度，B 为两个轻子对的质量及各对内部的角分离，
+C 为四轻子系统的横动量及两个轻子对之间的方位角差，D 为描述产生与衰变方向的五个角度变量。
+这些变量由同一组轻子四动量取得或计算，组间可能存在相关性。
+例如，轻子对质量与单轻子动量可能提供相关的信号、背景区分信息。
+
+比较方案包括全部输入 ABCD，以及分别删除 A、B、C、D 后的 BCD、ACD、ABD、ABC。
+每种方案使用种子 42、43、44 独立初始化并训练，共得到十五个模型。
+所有模型共享物理事件划分，使用验证样本选择检查点并确定各自的分数阈值，
+在模型和阈值冻结后计算最终评估结果。删组差值先在同一种子内计算，再汇总三个种子的变化范围。
+
+在当前三个种子的比较中，删除 C 组均使信号保留率下降、背景保留率上升、信背比降低；
+其余删组的变化方向依指标和种子而异，详见第~\ref{sec:results}~节。
+种子间方向一致仅是描述性结果，尚不能据此判断差异的统计显著性。
+ABCD 与 BCD 的质量谱示例还显示，减少总背景的同时，剩余背景在各质量区域的相对份额也会变化。
+
+本文使用 draft-v2 三子集分析的受控 MC 结果，来源和既有核验范围见附录~\ref{app:provenance}。
+文中数值沿用既有结果记录；当前工作目录缺少相同身份的评估与报告产物，本次数值复核的范围见附录~\ref{app:availability}。
+研究限于教育与技术用途，不建立真实碰撞数据上的测量结论。
+
+\section{模拟样本与事件选择}
+
+
+\subsection{信号、背景与研究总体}
+样本来自 ATLAS 2020 教育用途 13 TeV 四轻子集合\cite{OpenData}，
+发布介绍与文件清单可直接查阅\href{https://opendata.cern.ch/record/15005}{CERN Open Data 记录 15005}。
+本文仅使用其中两份 MC 文件：信号 DSID 345060（\texttt{ggH125\_ZZ4lep}）和背景 DSID 363490（\texttt{llll}）。
+信号对应胶子融合产生质量设为 $125\gev$ 的希格斯，随后经 $H\to ZZ^*\to4\ell$ 衰变；背景样本同样包含四轻子事件。
+过程名称沿用样本标识，详细生产配置仍待核实，见附录~\ref{app:fields}。
+本文的背景仅指所选的 \texttt{llll} 样本，所列信背比不代表完整实验背景组成下的信背比。
+
+两份样本使用相同的物理筛选：依次检查事件触发和轻子品质，要求恰好四个合格轻子，
+构造同味异号轻子对，并施加动量、接受度与轻子对质量条件。
+分析限于含两个电子和两个缪子（$2e2\mu$）且满足 $105\leq m_{4\ell}<140$ GeV 的事件。
+电子对与缪子对构成两个候选，其中质量更接近 $91.1876$ GeV 的一对记为 $Z_1$，另一对记为 $Z_2$。
+完整条件、执行顺序和文献对应见附录~\ref{app:cuts}，四动量与角度定义见附录~\ref{app:fields}。
+
+在最终评估样本中，“网络筛选前”指通过共同物理条件的全部事件；
+“网络筛选后”指其中还通过冻结网络分数阈值的高分事件。
+
+\subsection{样本划分与各子集的职责}
+
+通过物理筛选的事件按事件组划分为训练、验证和最终评估集合，分配概率分别为 60\%、20\%、20\%。
+这些概率不要求有限样本中的事件数量恰好满足该比例。同一物理事件及其相关记录始终属于同一集合，
+所有输入方案和训练种子使用相同划分。训练集用于拟合标准化参数和网络参数，验证集用于检查点与阈值选择，
+最终评估集用于计算冻结选择下的产额与质量谱。
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}p{.14\linewidth}p{.18\linewidth}Y@{}}
+\toprule
+子集 & 分配概率 & 用途 \\
+\midrule
+训练 & 60\% & 拟合输入标准化参数与网络参数。 \\
+验证 & 20\% & 用 AUC 选择检查点，再用背景分数确定阈值。 \\
+最终评估 & 20\% & 在模型与阈值冻结后，计算筛选产额及质量谱。 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+检查点由验证集上的绝对权重 AUC 选择，阈值由所选网络的验证背景分数确定。
+最终评估样本不参与参数更新、检查点选择或阈值确定。
+\begin{table}[H]
+\caption{下载文件记录数与物理筛选后最终评估事件数。}
+\label{tab:population}
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}Y p{.23\linewidth} rrr@{}}
+\toprule
+样本范围 & 计数方式 & 信号 & 背景 & 合计 \\
+\midrule
+下载的 MC 样本文件 & 文件中的记录条数 & 164,716 & 554,279 & 718,995 \\
+最终评估样本（网络筛选前） & 同一个事件只计一次 & 9,049 & 698 & 9,747 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+表~\ref{tab:population} 的两行对应不同处理阶段。第二行经过共同物理筛选和样本划分，
+不能由第一行直接乘以 20\% 得到。既有汇总未提供训练集和验证集的完整事件组计数，本文不以分配概率反推这些数量。
+
+\Needspace{13\baselineskip}
+\subsection{事件数、物理权重与预期产额}
+
+\label{sec:weights}
+
+事件数与预期产额分别描述模拟样本的数量和物理归一化后的预期事件数。
+每个物理事件在计数时只计一次；计算产额时，则对模拟记录的带符号物理权重求和。
+本文按项目协议 \nolinkurl{config/protocols/h4l_draft_v2.json}，将信号和背景均归一化到
+$10\,\mathrm{fb}^{-1}$，该值指定本项目的 MC 归一化目标。
+
+记录 $i$ 的生成器权重为 $w_i^{\rm gen}=\texttt{mcWeight}$，其物理权重定义为
+
+\[
+ w_i^{\rm phys}=\frac{\mathcal L\,\sigma_{\rm eff}}{S_{\rm gen}}\,w_i^{\rm gen},
+ \qquad \mathcal L=10^4\,\mathrm{pb}^{-1}.
+\]
+$\mathcal L$ 为目标积分亮度，$\sigma_{\rm eff}$ 为样本有效截面，$S_{\rm gen}$ 为官方参数表给出的生成器权重和。
+官方固定版本参数表\cite{SampleInfo}给出的数值与项目配置一致：
+\begin{center}
+\small
+\begin{tabular}{lrr}
+\toprule
+样本 & $\sigma_{\rm eff}$（$\mathrm{pb}$） & $S_{\rm gen}$ \\
+\midrule
+信号 & 0.0060239 & 27881776.6536 \\
+背景 & 1.2578 & 7538705.8077 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+最终评估集合的分配概率为 $20\%=0.2$。为估计同一目标亮度下共同物理筛选后的产额，采用评估权重
+\[
+ u_i=\frac{w_i^{\rm phys}}{0.2}.
+\]
+令 $E$ 为某一过程通过物理筛选的全部最终评估事件，$s_i$ 为网络分数，
+$t$ 为用验证集背景确定的分数阈值，具体方法见第~\ref{sec:threshold}~节。筛选前后的产额分别为
+\[
+ Y_{\rm before}=\sum_{i\in E}u_i,\qquad
+ Y_{\rm high}=\sum_{i\in E,\,s_i\geq t}u_i.
+\]
+$Y_{\rm before}$ 和 $Y_{\rm high}$ 分别为网络筛选前与高分类别的预期产额。
+求和保留权重的正负号，因此模拟记录数不能直接作为预期产额。其他归一化设置及与官方示例的差异见附录~\ref{app:normalization}。
+
+
+\FloatBarrier
+
+\section{特征组与神经网络方法}
+
+\subsection{输入信息与学习目标}
+
+网络输入由通过共同物理筛选的轻子运动学量构成。
+表~\ref{tab:feature-overview} 列出四组输入：$p_T$ 表示垂直于束流方向的动量，赝快度 $\eta$ 描述相对束流的方向，
+$\Delta R$ 表示两个轻子在赝快度与方位角平面内的角分离。四组均从公开轻子的四动量取得或计算，
+具体变量名、重建公式及角度约定见附录~\ref{app:fields}。
+\begin{table}[H]
+\caption{特征组与输入维数。ABCD、BCD、ACD、ABD、ABC 的输入维数依次为 19、11、15、17、14。}
+\label{tab:feature-overview}
+\centering\small
+\begin{tabularx}{\linewidth}{@{}cp{.36\linewidth}Yc@{}}
+\toprule
+组 & 变量 & 物理含义 & 维数 \\
+\midrule
+A & 四个轻子的 $p_T$、$\eta$ & 单轻子的动量尺度与方向 & 8 \\
+B & $m_{Z1}$、$m_{Z2}$、两对内的 $\Delta R$ & 轻子对质量与内部角分离 & 4 \\
+C & $p_{T,4\ell}$、$|\Delta\phi_{ZZ}|$ & 四轻子整体横向运动与两对间方位角关系 & 2 \\
+D & 三个角余弦及两个平面角 & 产生与衰变的空间取向 & 5 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+每一种输入方案都单独训练。
+所有分类器均不显式输入 $m_{4\ell}$，但其他变量也由这些轻子的四动量构造，仍可能与质量相关。
+
+信号和背景的训练标签分别为 1 和 0。每个输入变量使用训练集统计量作标准化。令 $x_{ij}$ 为事件 $i$ 的第 $j$ 个输入变量，
+$\mu_j$、$\sigma_j$ 为该变量在训练集中的均值和标准差，则送入网络的数值为
+\[
+ \widetilde x_{ij}=\frac{x_{ij}-\mu_j}{\sigma_j}.
+\]
+标准化用于协调变量的数值尺度。验证和评估样本使用训练集得到的同一组 $\mu_j$、$\sigma_j$；
+训练集中标准差为零的变量，其分母设为 1。
+
+
+\subsection{三层隐藏层的全连接模型}\label{sec:network}
+
+分类器采用 PyTorch 实现的多层感知机（MLP），包含三个隐藏层，结构为
+\[
+ \underbrace{d_{\rm in}}_{\text{输入}}
+ \;\longrightarrow\;
+ \underbrace{64\;\longrightarrow\;64\;\longrightarrow\;32}_{\text{三个隐藏层}}
+ \;\longrightarrow\;
+ \underbrace{1}_{\text{输出}}.
+\]
+输入维数 $d_{\rm in}$ 由表~\ref{tab:feature-overview} 中的方案决定。
+各方案使用相同的隐藏层结构，具体操作见表~\ref{tab:network}。
+
+\begin{table}[H]
+\caption{实际网络的计算顺序。Linear 表示全连接线性变换；各方案只改变输入维数，隐藏层结构相同。}
+\label{tab:network}
+\centering\small
+\begin{tabularx}{\linewidth}{@{}p{.15\linewidth}p{.18\linewidth}Y@{}}
+\toprule
+部分 & 维数变化 & 依次执行的操作 \\
+\midrule
+输入处理 & $d_{\rm in}\to d_{\rm in}$ & 使用训练集的均值和标准差，对每个输入变量作标准化。 \\
+隐藏层 1 & $d_{\rm in}\to64$ & Linear、LayerNorm、SiLU、Dropout（0.1）。 \\
+隐藏层 2 & $64\to64$ & Linear、LayerNorm、SiLU、Dropout（0.1）。 \\
+隐藏层 3 & $64\to32$ & Linear、LayerNorm、SiLU。 \\
+输出 & $32\to1$ & Linear 得到实数 $z$，计算分数时再施加 sigmoid。 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+全连接层的单个节点计算为
+\[
+ a_j=\sum_k W_{jk}h_k+b_j.
+\]
+其中 $h_k$ 为前一层输出，$W_{jk}$ 和 $b_j$ 分别为连接权重与偏置。
+隐藏层使用 LayerNorm、SiLU，前两个隐藏层还使用概率为 0.1 的 Dropout。
+这些操作的定义和训练、评估模式差异见附录~\ref{app:layers}。
+
+\Needspace{7\baselineskip}
+输出层给出实数 $z$，通过 sigmoid 得到分类分数
+\[
+ s=\frac{1}{1+e^{-z}}
+\]
+较高分数表示事件被排在更接近信号的一侧。由于训练采用类别内重标度的优化权重，
+该分数不能直接解释为真实信号比例或已校准的信号概率。
+
+
+\subsection{网络训练和方案对比}
+
+训练采用小批次加权二元交叉熵。每轮随机打乱训练事件，以最多 1024 个事件组成一批，
+由当前网络计算分数 $s_i$。标签 $y_i=1$ 表示信号，$y_i=0$ 表示背景，单事件损失为
+\[
+ \ell_i=-\left[y_i\ln s_i+(1-y_i)\ln(1-s_i)\right].
+\]
+对于信号和背景，损失分别为 $\ell_i=-\ln s_i$ 和 $\ell_i=-\ln(1-s_i)$，
+因此最小化损失分别倾向于提高信号分数和降低背景分数。
+
+优化权重取绝对物理权重，并在各训练类别内除以其平均值：
+\[
+ \overline w_c=\frac{1}{N_c}\sum_{i\in\mathcal T_c}|w_i^{\rm phys}|,
+ \qquad
+ \alpha_i=\frac{|w_i^{\rm phys}|}{\overline w_{y_i}}.
+\]
+$c=0,1$ 分别表示背景和信号，$\mathcal T_c$ 为该类的全部训练事件，$N_c$ 为其事件数。
+这一处理使损失权重非负，并使两类的平均单事件优化权重均为 1，同时保留类别内的相对权重。
+由于两类事件数可以不同，总优化权重不一定相等。
+
+对含 $m$ 个事件的批次 $\mathcal B$，目标函数为
+\[
+ L_{\rm batch}=\frac{1}{m}\sum_{i\in\mathcal B}\alpha_i\ell_i.
+\]
+反向传播计算该损失对网络参数的梯度，AdamW 以学习率 $10^{-3}$、权重衰减 $10^{-4}$ 更新参数。
+遍历全部训练事件为一轮（epoch），每轮结束后进行验证并执行下一节的检查点与提前停止规则。
+优化权重仅用于训练，最终产额仍使用第~\ref{sec:weights}~节的带符号物理权重。
+
+五种方案使用相同的优化器、隐藏层结构、训练轮数上限、样本划分和检查点选择规则，
+每种方案均以种子 42、43、44 从随机初始化开始训练。
+种子控制初始化、事件打乱和 Dropout，输入维数的变化同时改变第一层参数数量。
+因此，删组比较评估的是在共同训练规则下重新拟合的分类器，而非将完整网络的某组输入在评估时直接置零。
+
+\Needspace{15\baselineskip}
+
+\subsection{用验证 AUC 选择检查点}
+
+每轮训练后，在验证集上以绝对物理权重计算 AUC。只有当前 AUC 相比此前保存的最佳值提高超过 $10^{-4}$，
+才更新最佳检查点。连续 20 轮没有上述改进时提前停止，训练最多进行 200 轮，结束后恢复已保存的最佳参数。
+种子 42 的 ABCD 在第 87 轮结束训练，使用第 67 轮的检查点；BCD 在第 86 轮结束，使用第 66 轮的检查点。
+检查点选择完成后，再用该网络确定分数阈值。实现与复现说明见附录~\ref{app:network}。
+
+\Needspace{13\baselineskip}
+
+\subsection{用验证背景确定分数阈值}
+\label{sec:threshold}
+
+每个模型使用自身验证背景分数的绝对物理权重加权中位数作为阈值 $t$。
+将分数从小到大排序，累加绝对物理权重，取累计权重首次达到总权重一半的位置对应的实际分数，不作插值。
+分数 $s\geq t$ 的事件进入高分类别，$s<t$ 的事件进入低分类别，同分事件不拆分。
+阈值在最终评估前固定，不根据评估结果调整。
+
+种子 42 的 ABCD 与 BCD 阈值分别为 $0.746724$ 和 $0.860891$。
+不同网络的分数刻度不必相同，阈值大小不能直接作为筛选性能指标；
+比较使用各模型在共同评估事件上应用自身阈值后得到的产额。
+
+\Needspace{15\baselineskip}
+
+\subsection{冻结后应用于最终评估样本}
+
+最终评估前冻结输入标准化参数、网络检查点和分数阈值。
+评估事件使用保存的标准化参数和网络计算分数，按固定阈值分为高、低两类，
+分别统计物理事件组数、带符号产额和质量谱。
+网络筛选仅改变被保留的事件，不改变单个事件的质量。
+
+信号保留率、背景保留率和信背比均使用整个 $[105,140)$ GeV 范围内的高分产额计算。
+低分类别用于检查高、低产额之和与网络筛选前总产额的一致性。
+验证背景加权中位数不保证最终评估背景产额恰好保留 50\%，具体原因及示例见附录~\ref{app:threshold}。
+
+\section{比较指标与计算示例}\label{sec:basic}
+
+\subsection{事件数与加权产额}
+以种子 42 的 ABCD 与 BCD 为例，表~\ref{tab:groups} 列出共同评估样本及各自高分类别的物理事件组数。
+ABCD 使用全部输入，BCD 删除单轻子变量 A。例如，ABCD 从 9,049 个信号事件组中保留了 8,761 个。
+这些计数描述有限模拟样本的规模；预期产额则按第~\ref{sec:weights}~节由带符号权重求和得到。
+\begin{table}[H]
+\caption{最终评估样本中的物理事件组数。后两列为种子 42 的高分子集。}
+\label{tab:groups}
+\centering
+\begin{tabular}{lrrr}
+\toprule
+过程 & 网络筛选前 & ABCD 高分 & BCD 高分 \\
+\midrule
+信号 & 9,049 & 8,761 & 8,563 \\
+背景 & 698 & 386 & 378 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{从产额到保留率和信背比}
+筛选效果以信号保留率、背景保留率和信背比描述。
+令 $E_S$、$E_B$ 分别为网络筛选前的最终评估信号、背景事件集合，$u_i$ 为第~\ref{sec:weights}~节的评估权重。
+将各集合内全部事件的权重相加，得到网络筛选前的信号产额 $S_0$ 和背景产额 $B_0$：
+\[
+ S_0=\sum_{i\in E_S}u_i,\qquad
+ B_0=\sum_{i\in E_B}u_i.
+\]
+令 $s_i$ 为事件分数，$t$ 为该模型已固定的阈值。只对通过阈值的事件求和，得到网络筛选后的产额：
+\[
+ S=\sum_{i\in E_S,\,s_i\geq t}u_i,\qquad
+ B=\sum_{i\in E_B,\,s_i\geq t}u_i.
+\]
+这四项产额均对应 $10\,\mathrm{fb}^{-1}$，指标定义为
+\[
+ R_S=\frac{S}{S_0},\qquad R_B=\frac{B}{B_0},\qquad Q=\frac{S}{B}.
+\]
+$R_S$ 和 $R_B$ 分别为信号与背景的带符号产额保留率，背景去除比例为 $1-R_B$。
+$Q$ 为筛选后的信背比，例如 $Q=2$ 表示信号产额为所选背景产额的两倍。
+保留率以百分数展示，产额与信背比直接列数值。
+
+将 $S=R_SS_0$、$B=R_BB_0$ 代入信背比，可得
+\[
+ Q=\frac{S_0}{B_0}\frac{R_S}{R_B}.
+\]
+在共同的 $S_0$、$B_0$ 下，信背比由两项保留率决定，三项指标不构成三条独立证据。
+背景减少的相对幅度较大时，$Q$ 可能提高，但信号也可能损失。
+因此，本文联合报告这些指标，以描述信号保留和背景抑制之间的取舍，不单独按 $Q$ 排名或合成总分。
+信背比未计入完整的计数与系统不确定性，不能单凭其提高判断统计灵敏度或测量精度提高。
+
+各模型使用同样的阈值确定规则，但评估时的背景保留率不一定相同。
+这里比较各模型按固定阈值留下的实际产额，没有再调阈值使它们保留相同比例的信号或背景。
+
+若 $S_0$ 或 $B_0$ 非正，对应保留率不计算；若 $B\leq0$，信背比不计算，并说明原因。
+产额始终使用带符号权重，不能先取绝对值。负产额或超出 $[0,1]$ 的保留率须保留原值并标记解释限制。
+
+\subsection{ABCD 与 BCD 的计算示例}
+\begin{table}[H]
+\caption{$10\,\mathrm{fb}^{-1}$ 下的预期带符号产额及保留率。
+误差为固定网络和阈值下按物理事件组计算的 MC 标准误差；保留率误差包括筛选前后共享事件的协方差。}
+\label{tab:yields}
+\centering
+\begin{tabular}{llrr}
+\toprule
+过程 & 选择 & 预期产额 & 保留率（\%） \\
+\midrule
+信号 & 网络筛选前（$S_0$） & $2.7710\pm0.0293$ & --- \\
+ & ABCD 高分 & $2.6824\pm0.0288$ & $96.80\pm0.19$ \\
+ & BCD 高分 & $2.6215\pm0.0285$ & $94.60\pm0.24$ \\
+背景 & 网络筛选前（$B_0$） & $2.3553\pm0.1683$ & --- \\
+ & ABCD 高分 & $1.2027\pm0.1202$ & $51.06\pm3.57$ \\
+ & BCD 高分 & $1.1012\pm0.1156$ & $46.75\pm3.57$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+将表~\ref{tab:yields} 的产额代入上一节的公式，得到表~\ref{tab:worked-metrics}。
+最后一列按“BCD 减 ABCD”计算，比较去掉 A 后各项指标的变化。
+\begin{table}[H]
+\caption{种子 42 的指标计算与删去 A 后的变化。表内算式采用显示精度，完整结果由未舍入汇总计算。
+保留率差以百分点表示，信背比差为直接差值。}
+\label{tab:worked-metrics}
+\centering\small
+\renewcommand{\arraystretch}{2.6}
+\begin{tabular}{lccr}
+\toprule
+指标 & ABCD & BCD & BCD $-$ ABCD \\
+\midrule
+信号保留率 $R_S$ & $\dfrac{2.6824}{2.7710}\simeq96.80\%$ & $\dfrac{2.6215}{2.7710}\simeq94.60\%$ & $-2.20$ 个百分点 \\
+背景保留率 $R_B$ & $\dfrac{1.2027}{2.3553}\simeq51.06\%$ & $\dfrac{1.1012}{2.3553}\simeq46.75\%$ & $-4.31$ 个百分点 \\
+信背比 $Q$ & $\dfrac{2.6824}{1.2027}\simeq2.23$ & $\dfrac{2.6215}{1.1012}\simeq2.38$ & 约 $+0.15$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+种子 42 的 BCD 同时减少信号与背景，背景保留率的相对下降使信背比提高。
+这一比较体现筛选取舍，不能由单个种子判断 BCD 普遍更优。
+
+\Needspace{12\baselineskip}
+\textbf{有限 MC 不确定性。}
+表~\ref{tab:yields} 中 $\pm$ 后的数值表示有限 MC 样本带来的标准误差。
+对当前过程（信号或背景）和当前选择，令 $\mathcal G$ 为参与计算的全部物理事件组的集合，$g$ 为事件组编号，
+$\mathcal I_g$ 为第 $g$ 组中参与当前产额计算的模拟记录集合，$u_i$ 为记录 $i$ 的带符号评估权重。
+将不同物理事件组视为独立计数单位，按 Poisson 型 MC 方差约定估计标准误差。组贡献、产额和标准误差分别为
+\[
+ U_g=\sum_{i\in\mathcal I_g}u_i,\qquad
+ Y=\sum_{g\in\mathcal G}U_g,\qquad
+ \sigma_Y=\sqrt{\sum_{g\in\mathcal G}U_g^2}.
+\]
+同一物理事件对应的记录归为一组，先合并组内贡献，再计算误差，避免将相关记录当作独立事件。
+只有独立单位权重计数等特殊情形，误差才化为 $\sqrt{N}$。
+这些误差条件于固定的网络、阈值和归一化参数，不包括重复训练、阈值估计及截面、亮度或尺度因子等系统不确定性。
+保留率的分子与分母共享事件，
+计算保留率误差时需计入协方差，具体方法见附录~\ref{app:errors}。
+
+
+\Needspace{14\baselineskip}
+\subsection{逐种子删组差值与汇总}
+删除 A、B、C、D 分别得到 BCD、ACD、ABD、ABC。为比较删除后的筛选变化，
+在每个训练种子内计算删组方案相对于 ABCD 的指标差值。令 $G$ 为删除的组，$r$ 为种子，定义
+\[
+ \Delta R_{S,G,r}=R_S(\mathrm{ABCD}\setminus G,r)-R_S(\mathrm{ABCD},r),
+\]
+\[
+ \Delta R_{B,G,r}=R_B(\mathrm{ABCD}\setminus G,r)-R_B(\mathrm{ABCD},r),\qquad
+ \Delta Q_{G,r}=Q(\mathrm{ABCD}\setminus G,r)-Q(\mathrm{ABCD},r).
+\]
+所有差值均按“删组方案减 ABCD”定义。两项保留率差乘以 100 后以\textbf{百分点}报告；
+$\Delta Q$ 则直接报告信背比差。
+
+负的 $\Delta R_S$ 表示信号保留得更少；负的 $\Delta R_B$ 表示背景保留得更少；正的 $\Delta Q$ 表示信背比提高。
+因此，不能只看正负号判断整体好坏，需要同时说明信号损失和背景减少。
+
+对每一删组和指标，汇总全部三个种子的差值，报告中位数及最小至最大范围。
+先在种子内作差可保留同一训练种子标签下的方案比较；先分别取两种方案的中位数再相减，一般不等价。
+
+三个差值同号，表示这三次训练的变化方向相同；有正有负，则表示方向随种子改变。
+最小至最大范围仅描述这三个差值，不是置信区间，不能用来判断统计显著性。
+此外，删组方案重新训练了网络，也重新确定了阈值。差值反映整套筛选方法的变化，不能解释为该组独立的物理贡献。
+
+
+\FloatBarrier
+\Needspace{12\baselineskip}
+\section{五种输入方案的比较结果}\label{sec:results}
+
+\subsection{逐种子的保留率与信背比}
+表~\ref{tab:basic-all} 列出五种输入方案、每种三个种子的全部十五个模型。
+既有证据记录中，各模型使用相同的网络筛选前产额：$S_0=2.7710$、$B_0=2.3553$，且高、低两类的产额之和均与网络筛选前的产额一致。
+因此，表中差别来自各模型筛选后留下的事件。
+
+表中包含全部十五个模型，分别保留每个种子的结果。方案间差值及种子变化在下一节统一汇总。
+\begin{table}[H]
+\caption{五种输入方案在三个训练种子下的产额、保留率与信背比。沿用既有证据记录中的十五个有效模型汇总及未舍入产额计算结果；当前复核范围见附录~\ref{app:availability}。
+$R_S$、$R_B$ 的单位为 \%，$S$、$B$ 对应 $10\,\mathrm{fb}^{-1}$。}
+\label{tab:basic-all}
+\centering\small
+\begin{tabular}{llrrrrr}
+\toprule
+输入 & 种子 & $S$ & $B$ & $R_S$ & $R_B$ & $Q=S/B$ \\
+\midrule
+ABCD & 42 & 2.6824 & 1.2027 & 96.80 & 51.06 & 2.230 \\
+ABCD & 43 & 2.6809 & 1.1589 & 96.75 & 49.20 & 2.313 \\
+ABCD & 44 & 2.6670 & 1.0834 & 96.25 & 46.00 & 2.462 \\
+\addlinespace
+BCD & 42 & 2.6215 & 1.1012 & 94.60 & 46.75 & 2.381 \\
+BCD & 43 & 2.6156 & 1.1145 & 94.39 & 47.32 & 2.347 \\
+BCD & 44 & 2.6264 & 1.1344 & 94.78 & 48.16 & 2.315 \\
+\addlinespace
+ACD & 42 & 2.6667 & 1.1536 & 96.24 & 48.98 & 2.312 \\
+ACD & 43 & 2.6679 & 1.1232 & 96.28 & 47.69 & 2.375 \\
+ACD & 44 & 2.7039 & 1.2813 & 97.58 & 54.40 & 2.110 \\
+\addlinespace
+ABD & 42 & 2.5731 & 1.2186 & 92.86 & 51.74 & 2.112 \\
+ABD & 43 & 2.5408 & 1.2192 & 91.69 & 51.76 & 2.084 \\
+ABD & 44 & 2.5805 & 1.2026 & 93.13 & 51.06 & 2.146 \\
+\addlinespace
+ABC & 42 & 2.6975 & 1.1241 & 97.35 & 47.73 & 2.400 \\
+ABC & 43 & 2.6972 & 1.0311 & 97.33 & 43.78 & 2.616 \\
+ABC & 44 & 2.6941 & 1.1386 & 97.22 & 48.34 & 2.366 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{删组差值与种子变化}
+表~\ref{tab:basic-deltas} 按第~\ref{sec:basic}~节的方法，将上一表转换为“删组方案减 ABCD”的差值。
+图~\ref{fig:basic-deltas} 展示相同差值及其相对于零线的方向。
+表中的种子范围与图中的连接线均为描述性汇总；三个差值同号不构成统计显著性证据。
+\begin{table}[H]
+\caption{相对于同种子 ABCD 的删组差值汇总。保留率差以百分点表示，信背比差无单位；每个汇总必须包含全部三个种子。}
+\label{tab:basic-deltas}
+\centering\small
+\begin{tabular}{llccccc}
+\toprule
+去掉组 & 指标 & 种子 42 & 种子 43 & 种子 44 & 中位数 & 最小至最大 \\
+\midrule
+A & $\Delta R_S$ & $-2.20$ & $-2.35$ & $-1.47$ & $-2.20$ & $[-2.35,-1.47]$ \\
+A & $\Delta R_B$ & $-4.31$ & $-1.88$ & $+2.17$ & $-1.88$ & $[-4.31,+2.17]$ \\
+A & $\Delta Q$ & $+0.150$ & $+0.033$ & $-0.147$ & $+0.033$ & $[-0.147,+0.150]$ \\
+\addlinespace
+B & $\Delta R_S$ & $-0.57$ & $-0.47$ & $+1.33$ & $-0.47$ & $[-0.57,+1.33]$ \\
+B & $\Delta R_B$ & $-2.09$ & $-1.51$ & $+8.40$ & $-1.51$ & $[-2.09,+8.40]$ \\
+B & $\Delta Q$ & $+0.081$ & $+0.062$ & $-0.351$ & $+0.062$ & $[-0.351,+0.081]$ \\
+\addlinespace
+C & $\Delta R_S$ & $-3.94$ & $-5.05$ & $-3.12$ & $-3.94$ & $[-5.05,-3.12]$ \\
+C & $\Delta R_B$ & $+0.68$ & $+2.56$ & $+5.06$ & $+2.56$ & $[+0.68,+5.06]$ \\
+C & $\Delta Q$ & $-0.119$ & $-0.229$ & $-0.316$ & $-0.229$ & $[-0.316,-0.119]$ \\
+\addlinespace
+D & $\Delta R_S$ & $+0.54$ & $+0.59$ & $+0.98$ & $+0.59$ & $[+0.54,+0.98]$ \\
+D & $\Delta R_B$ & $-3.34$ & $-5.42$ & $+2.34$ & $-3.34$ & $[-5.42,+2.34]$ \\
+D & $\Delta Q$ & $+0.169$ & $+0.302$ & $-0.096$ & $+0.169$ & $[-0.096,+0.302]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/basic-20261108/deletion-differences.pdf}
+\caption{相对于 ABCD 的逐种子删组差值。横轴为去掉的输入组；三面板依次为信号保留率差（百分点）、
+背景保留率差（百分点）和信背比差。圆点表示种子 42--44，空心菱形表示中位数，
+细线连接最小值和最大值，虚线为零线。细线不是置信区间。}
+\label{fig:basic-deltas}
+\end{figure}
+
+
+\subsection{结果分析}
+\textbf{删除 C。} 信号保留率在三个种子下均下降（$-5.05$ 至 $-3.12$ 个百分点），
+背景保留率均上升（$+0.68$ 至 $+5.06$ 个百分点），信背比均下降（$-0.316$ 至 $-0.119$）。
+在这三个种子的冻结选择下，ABCD 相比 ABD 同时保留更多信号和更少背景，点估计在两项保留率上均更有利。
+C 组包括四轻子整体横动量和两个轻子对间的方位角差；现有比较未分开删除这两个变量，不能确定各自作用，
+也不能将组间相关性和重新训练的影响分解为独立贡献。
+
+\textbf{删除 A。} 信号保留率均下降（$-2.35$ 至 $-1.47$ 个百分点），
+背景保留率与信背比的变化方向则依种子而异。
+种子 42、43 同时减少信号和背景，信背比提高；种子 44 的信号减少、背景增加，信背比降低。
+因此，A 组删除带来的信号损失方向一致，背景抑制是否补偿这一损失则随训练结果变化。
+
+\textbf{删除 B。} 三项指标的差值均存在种子间符号变化。
+种子 42、43 的信号和背景保留率略降，信背比提高；种子 44 保留更多信号和背景，信背比下降。
+同一删组在不同种子下出现不同取舍，仅用中位数会掩盖这种方向变化。
+这些结果不支持将 B 组概括为稳定有益或稳定冗余。
+
+\textbf{删除 D。} 信号保留率均上升（$+0.54$ 至 $+0.98$ 个百分点），
+但背景保留率和信背比没有一致改善：种子 42、43 的背景减少、信背比提高，种子 44 则相反。
+因此，删除 D 后信号保留较多，尚不足以说明整体筛选性能稳定提高，
+也不能据此否定角度变量在其他输入组合或分析条件下的作用。
+
+四种删除比较中，只有删除 C 在三个种子下均同时表现为信号保留减少、背景保留增加。
+其余删除至少有一项指标的变化方向随种子改变，无法得到统一的方案排序。
+这些差值条件于当前 MC 样本、网络和阈值规则，尚未给出包含共享事件相关性的差值不确定性，
+因此不能由种子间方向一致判断差异显著。现有结果支持描述筛选取舍，尚不能确定普遍最优的输入组合或测量精度增益。
+
+\FloatBarrier
+
+\Needspace{14\baselineskip}
+
+\section{质量谱变化}
+总产额指标之外，以种子 42 的 ABCD 和 BCD 为例，检查筛选前后的质量分布。
+绝对产额谱反映各区域的预期产额，分别归一化后的谱形用于区分总量减少与相对份额变化。
+该示例仅涉及这两个模型，不用于解释全部删组结果或确定 C 组的作用机制。
+展示使用七个 5 GeV 质量箱，保留率和信背比仍按整个质量窗口计算。
+
+\subsection{分箱预期产额}
+按四轻子不变质量分箱，对信号和背景分别求和。令 $b$ 表示一个质量箱，分箱产额为
+
+\[
+ Y_b=\sum_{i\in b}u_i.
+\]
+筛选前对全部评估事件求和，筛选后仅对高分事件求和，各箱之和等于对应选择的总产额。
+图~\ref{fig:yields} 左列为信号，右列为背景，筛选前后使用相同积分亮度与质量箱边界。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=.98\linewidth]{figures/basic-20261108/mass-yields.pdf}
+\caption{最终评估样本的带符号质量谱。上排为 ABCD，下排为 BCD，均使用种子 42。
+蓝色圆点表示网络筛选前的产额，橙色圆点表示高分事件的产额；左列为信号，右列为背景。每点代表一个 5 GeV 箱，
+连线仅作视觉引导，不代表连续质量模型。纵轴为 $10\,\mathrm{fb}^{-1}$ 下的预期产额，信号与背景刻度不同。
+误差棒表示按物理事件组计算的 MC 标准误差。阴影标记统计支持不足的区域；负产额保留。}
+\label{fig:yields}
+\end{figure}
+
+
+
+模拟信号集中在 125 GeV 附近，ABCD 和 BCD 的高分选择均保留了这一主要区域。
+网络只决定事件是否留下，不改变事件质量。这里的粗分箱结果不能用来判断峰位是否移动、
+探测器分辨率是否改善或希格斯物理宽度是否变化。
+
+筛选前的背景覆盖整个质量窗口，分布并不均匀。筛选后，不同质量区域的产额变化幅度不同，
+高质量尾部的减少较为明显。下一节通过各区域占总产额的份额进一步描述这种变化。
+\FloatBarrier
+
+\Needspace{12\baselineskip}
+\subsection{归一化质量谱形}
+图~\ref{fig:shapes} 对每条曲线分别归一化，以比较各质量区域的相对份额。
+对给定过程与选择，总产额为 $Y_{\rm total}=\sum_bY_b$。在总产额为正时，定义
+\[
+ f_b=\frac{Y_b}{Y_{\rm total}}.
+\]
+$f_b$ 表示这一箱占该曲线总产额的比例。筛选前曲线用筛选前总产额作分母，筛选后曲线用筛选后总产额作分母。
+实际汇总还要求筛选前、后两条曲线的总产额均通过统计支持检查，具体条件见附录~\ref{app:shape-support}。
+使用带符号产额时，个别箱的份额仍可能为负，归一化曲线不一定是概率密度。
+表~\ref{tab:fractions} 再将指定质量区域内各箱的份额相加，以百分数列出，便于具体比较。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=.96\linewidth]{figures/basic-20261108/mass-shapes.pdf}
+\caption{与图~\ref{fig:yields} 使用相同事件和阈值、分别归一化后的筛选前后质量谱形。
+每个箱除以其曲线自身为正的带符号总产额。误差传播包括共享归一化；筛选前后也共享事件。
+带符号归一化谱形不一定是概率密度。保留阴影箱和负值箱，不作平滑、裁剪或重新分箱。}
+\label{fig:shapes}
+\end{figure}
+
+\begin{table}[H]
+\caption{固定质量区域内的带符号产额占各自曲线总产额的比例（\%）。
+数值为描述性点估计，未展示不确定度，不能据此判定筛选前后差异的统计显著性。}
+\label{tab:fractions}
+\centering
+\small
+\begin{tabular}{llrrr}
+\toprule
+过程 & 区域（GeV） & 筛选前 & ABCD 高分 & BCD 高分 \\
+\midrule
+信号 & $[120,130)$ & 87.9 & 88.6 & 88.5 \\
+背景 & $[120,130)$ & 32.5 & 51.8 & 47.9 \\
+背景 & $[135,140)$ & 22.0 & 6.5 & 9.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+信号在 $[120,130)$ GeV 区域的份额变化较小；背景在同一区域的份额上升，而在 $[135,140)$ GeV 的份额下降。
+背景总产额同时减少，因此区域份额上升不等于该区域绝对产额增加。表中比例未展示差异的不确定性，
+其变化只作为描述性结果。
+
+这些谱形变化与筛选具有质量依赖性的情形一致，说明省略显式 $m_{4\ell}$ 输入并不足以保证质量无关的选择。
+现有示例不能将变化归因于单个输入变量，也不能据此判断背景存在物理共振。
+\FloatBarrier
+
+\subsection{统计支持与解释限制}
+阴影标记事件组不足、产额估计不稳定或正负权重抵消较强的质量箱，
+判定规则见附录~\ref{app:errors}。ABCD 高分背景在 $[105,110)$ GeV 箱中的产额为负；
+若干背景箱及信号高质量尾部也缺少足够统计支持。这些结果按原值展示，负产额未裁剪为零。
+
+误差棒描述网络和阈值固定时有限 MC 样本造成的标准误差。
+同一事件可能同时参与筛选前后曲线；归一化时，各箱又共用同一总产额。
+因此，图中的点及两条曲线存在相关性，不能把筛选前后当作两组独立测量。
+
+
+\section{结论与局限}\label{sec:conclusion}
+
+本文在共同的受控 MC 样本和训练规则下，比较了完整输入 ABCD 与四种单组删除方案，
+每种方案训练三个种子。比较使用冻结阈值下的信号保留率、背景保留率和信背比，
+并以 ABCD、BCD 的质量谱描述总产额与质量分布的共同变化。
+
+删除 C 组在三个种子下均使信号保留率下降、背景保留率上升、信背比降低。
+删除 A、B、D 至少有一项指标的方向随种子变化，现有比较无法给出统一的特征组排序。
+ABCD 与 BCD 的谱形示例还表明，背景总量减少的同时，剩余背景可在部分质量区域占据更大份额。
+因此，筛选效果需结合信号保留、背景抑制和质量分布描述，不能单凭信背比提高推断测量精度改善。
+
+这些结论限于两份所选模拟样本、既定网络和阈值规则。背景未覆盖完整实验组成，
+组间变量可能相关，删除后又重新训练并确定阈值，因而差值反映整套筛选方法的变化，不能分解为独立的物理贡献。
+质量谱仅展示两个模型的一个种子，不构成 C 组作用机制的证据。
+
+三个种子的最小至最大范围描述已观察到的训练结果变化；MC 标准误差条件于固定的网络与阈值。
+两者均未涵盖完整训练和阈值估计的不确定性，也未建立删组差异的统计显著性。
+进一步判断筛选增益，需要分别处理共享评估事件下的差值不确定性、训练与阈值变化，
+并在明确背景组成和物理归一化适用性的条件下开展验证。这些工作不属于本文已完成的结果。
+
+本研究仍属探索性、非独立分析。重新划分或重新运行已使用的源样本，不会产生独立验证样本。
+样本生产配置、发布前筛选、部分选择条件的外部依据及物理权重适用性仍待核实。
+当前目录的结果来源可用性缺口还限制了对既有数值的端到端复核，见附录~\ref{app:availability}。
+本项目用于教育与技术研究，不构成 ATLAS/CMS 官方结果、希格斯发现或物理测量。
+
+\clearpage
+\appendix
+
+\section{字段、重建与输入约定}\label{app:fields}
+
+\subsection{MC 事件生成与公开样本来源}\label{app:mc-generation}
+蒙特卡洛事件生成以理论过程给出的微分截面为基础，通过随机抽样产生事件的运动学配置。
+在非负分布的理想化独立抽样情形中，若 $x$ 表示事件运动学、$\sigma$ 为积分截面，可写为
+\[
+ p(x)=\frac{1}{\sigma}\frac{d\sigma}{dx},\qquad
+ \int g(x)p(x)\,dx\simeq\frac{1}{N}\sum_{k=1}^{N}g(x_k),\quad x_k\sim p.
+\]
+其中 $g$ 表示待计算的事件函数，$N$ 为模拟事件数。该式说明随机样本如何近似分布积分，
+不要求实际生成器采用等权重抽样。实际计算可使用重要性抽样和事件权重；
+高阶计算及其与簇射的匹配还可能产生带符号权重。因此，本文的物理产额使用第~\ref{sec:weights}~节的权重求和，
+不将全部记录直接视为单位权重事件，也不由负权重的存在判断其具体生成机制。
+
+通常的强子对撞机模拟链条包括：依据硬散射过程、部分子分布函数和微扰计算产生初始事件，
+模拟部分子簇射、强子化及不稳定粒子衰变，再模拟探测器与触发响应，重建电子和缪子等对象。
+ATLAS 模拟框架的公开说明介绍了事件生成器与探测器模拟的衔接\cite{ATLASSimulation}。
+这里描述的是通用流程，该文献不提供本文两份 2020 教育样本各自的完整生产配置。
+
+本项目使用 ATLAS 已生成并发布的 MC 文件，从其中的重建轻子字段开始处理，
+不自行生成硬散射事件、簇射或探测器响应。项目内的“重建”指轻子四动量组合、候选配对及运动学变量计算，
+使用的是公开重建对象，而非生成器真值四动量。随后执行共同物理筛选、事件组划分、网络训练与冻结评估。
+这些步骤与上游 MC 样本生产属于不同处理阶段。
+
+\subsection{样本生产信息的证据范围}
+本次查阅的 CERN 发布记录\cite{OpenData}确认了 2020 版、13 TeV、至少四个电子或缪子的集合，
+以及发布前的宽松对象与事件预筛选。固定版本样本表\cite{SampleInfo}给出 DSID、样本名称和归一化常数。
+本地两份 ROOT 文件的 SHA-256、\texttt{mini} 树名与记录数均与数据契约一致，
+但文件身份一致不能补足生产配置证据。
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}p{.23\linewidth}Y@{}}
+\toprule
+信息 & 本次核验范围及限制 \\
+\midrule
+样本身份 & 信号为 DSID 345060（\texttt{ggH125\_ZZ4lep}），背景为 DSID 363490（\texttt{llll}）；与 2020 版数据契约及公开文件清单对应。 \\
+生成器与理论设置 & 两份样本各自的生成器及版本、微扰阶数、部分子分布函数、簇射与强子化设置、调参及生成级过滤条件，尚需对应生产记录。 \\
+探测器与对象定义 & 探测器模拟配置、额外碰撞叠加、辐射处理和轻子对象的精确定义，尚不能由所检验的发布记录、参数表与 ROOT 元数据确定。 \\
+发布前筛选 & 已确认存在宽松预筛选；精确动量、接受度与品质阈值仍待核实。 \\
+归一化与背景组成 & 参数数值可核对；有效截面的因子分解、负权重来源及 \texttt{llll} 初态与干涉组成仍未建立。 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+因此，不将 DSID 363490 写成已证实的纯夸克初态 $ZZ$，也不将 2025 版文件名中的生成器信息用于本次 2020 版样本。
+表~\ref{tab:population} 的下载与评估计数不能用来计算相对全部生成事件的接受效率。
+详细来源、代码对照和查验范围记录于 \nolinkurl{paper/draft-v2/MC-SOURCE-METHOD-AUDIT-20261115.md}。
+\subsection{读取字段}
+文件中的 \texttt{mini} 树按记录存放事件。一个 entry 对应一条记录，branch 对应记录中的一个字段。
+下表列出本项目读取的全部 19 个分支。分支数量与由其构造的网络输入维数分别定义，原文件还可能包含其他分支。
+
+前七个字段为标量，其余为逐轻子向量；不同轻子向量的相同下标对应同一对象。
+例如 \texttt{lep\_n=4} 时，各轻子向量有四个元素。
+
+\begingroup
+\small
+\renewcommand{\arraystretch}{1.13}
+\begin{tabularx}{\linewidth}{@{}p{.62\linewidth}Y@{}}
+\toprule
+读取的分支 & 含义与存储单位 \\
+\midrule
+\texttt{runNumber, eventNumber, channelNumber} & 事件／样本标识（整数） \\
+\texttt{mcWeight; trigE, trigM; lep\_n} & 生成器权重；触发布尔值；轻子数 \\
+\texttt{lep\_pt, lep\_eta, lep\_phi, lep\_E} & $p_T$、$\eta$、$\phi$、能量；动量和能量为 MeV，角度为弧度 \\
+\texttt{lep\_charge, lep\_type} & 电荷和粒子类型（整数向量） \\
+\texttt{lep\_isTightID, lep\_trigMatched} & 鉴别和触发匹配标志（布尔向量） \\
+\texttt{lep\_ptcone30, lep\_etcone20} & 径迹／量能器隔离量（MeV） \\
+\texttt{lep\_z0; lep\_tracksigd0pvunbiased} & $z_0$（mm）；$d_0/\sigma(d_0)$（无量纲） \\
+\bottomrule
+\end{tabularx}
+\endgroup
+
+运动学、隔离及碰撞参数字段为浮点向量，使用前将 MeV 换算为 GeV。
+事件权重按第~\ref{sec:weights}~节换算为预期产额。
+这些字段说明来自项目输入配置和此前的 ROOT 元数据核对，尚不能补足样本生产过程的缺失信息。
+\subsection{四动量重建与输入分组}
+\textbf{单轻子四动量。} 对通过品质筛选的轻子，将动量和能量换算为 GeV，再按 $p_T$ 从高到低编号。
+取 $c=1$，将公开的 $(p_T,\eta,\phi,E)$ 代入
+\[
+ p^\mu=(E,p_x,p_y,p_z),\qquad
+ p_x=p_T\cos\phi,\quad p_y=p_T\sin\phi,\quad p_z=p_T\sinh\eta.
+\]
+这样得到每个轻子的能量和三个动量分量，后续可通过四动量相加计算组合系统的质量和动量。
+
+\textbf{轻子对定义。} 按类型和电荷寻找同味异号（SFOS）对，即电子与正电子配对，或两个电荷相反的缪子配对。
+本项目只研究 $2e2\mu$ 道，因此电子对和缪子对给出唯一的两对。
+将质量更接近 $91.1876\gev$ 的一对记为 $Z_1$，另一对记为 $Z_2$。
+文献中的 $m_{12},m_{34}$ 对应代码的 \texttt{mZ1,mZ2}；$Z_1$ 由质量确定，不固定对应电子对，也不按 $p_T$ 编号。
+
+\textbf{组合系统运动学。}
+先将每对轻子的四动量相加，得到 $P_j=p_{j^-}+p_{j^+}$，再计算四轻子总四动量 $Q=P_1+P_2$。
+由此得到
+\[
+ m_{Zj}=\sqrt{P_j^2},\qquad m_{4\ell}=\sqrt{Q^2},\qquad
+ p_{T,4\ell}=\sqrt{Q_x^2+Q_y^2}.
+\]
+前两项分别给出轻子对质量和四轻子质量，第三项给出四轻子系统垂直于束流方向的总动量大小。
+这些计算使用已有轻子对象，不重新模拟探测器。所得质量谱仍受辐射、探测器响应和筛选影响，
+谱的宽度不能直接解释为希格斯本征宽度。
+
+\textbf{输入分组。} A 组直接取排序后的 $p_T,\eta$；B、C 组由上述四动量计算。
+$\Delta R$ 使用同一对内两轻子的 $\eta,\phi$，方位角差先折回 $[-\pi,\pi)$；
+\texttt{deltaPhi\_ZZ} 则是两个轻子对方位角差的绝对值。
+下表的 19 维输入由读取的字段整理、计算而来，并非文件中另外存放的 19 个现成字段。
+\begin{table}[H]
+\caption{输入变量分组及其物理含义。动量和质量使用 GeV，方位角使用弧度。}
+\label{tab:features}
+\small
+\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\linewidth}{@{}p{.05\linewidth}p{.43\linewidth}Y@{}}
+\toprule
+组 & 代码变量 & 物理含义 \\
+\midrule
+A & \texttt{lep1\_pt}--\texttt{lep4\_pt}；\texttt{lep1\_eta}--\texttt{lep4\_eta} &
+单轻子的横动量和赝快度，描述动量尺度及相对束流的方向。 \\
+B & \texttt{mZ1}, \texttt{mZ2}；\texttt{deltaR\_Z1}, \texttt{deltaR\_Z2} &
+两个轻子对的质量，以及各对内部的角分离 $\Delta R=\sqrt{(\Delta\eta)^2+(\Delta\phi)^2}$。 \\
+C & \texttt{pt4l}, \texttt{deltaPhi\_ZZ} &
+四轻子系统的横动量，以及两个轻子对之间的方位角差绝对值。 \\
+D & \texttt{cos\_theta\_star}, \texttt{cos\_theta\_1}, \texttt{cos\_theta\_2}；
+\texttt{phi\_decay\_planes}, \texttt{phi\_production\_plane} &
+一个产生角余弦、两个衰变极角余弦，以及描述衰变平面与产生平面相对取向的两个角。 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\subsection{五个角度的约定}
+D 组在指定参考系中比较产生和衰变方向。计算前先对轻子四动量作洛伦兹变换，再按以下约定取角度：
+\begin{enumerate}[leftmargin=1.7em,itemsep=3pt]
+\item \textbf{产生角。} 在四轻子静止系中，比较 $Z_1$ 方向与变换后的实验室正束流方向，得到夹角余弦 $\cos\theta^*$。
+\item \textbf{两个衰变极角。} 分别进入各轻子对静止系，比较负轻子方向与另一轻子对的反方向，得到 $\cos\theta_1,\cos\theta_2$。
+\item \textbf{两个平面角。} 在四轻子静止系中，用同一对负、正轻子动量的叉积定义衰变平面法向量，
+用正束流方向与 $Z_1$ 方向定义产生平面法向量。绕 $Z_1$ 轴取有向角，分别比较两个衰变平面，以及产生平面与第一衰变平面。
+\end{enumerate}
+角度取值范围为 $[-\pi,\pi)$，余弦为 $[-1,1]$。各输入方案使用相同约定，以保证变量含义一致。
+\FloatBarrier
+
+\Needspace{30\baselineskip}
+\section{完整选择条件}\label{app:cuts}
+
+\subsection{共同选择的执行顺序}
+下表按执行顺序列出物理筛选条件及目的。每个事件在网络筛选前都须通过全部条件。
+随后按第 2.2 节划分样本；最终评估中的网络筛选再使用已固定的分数阈值。
+\begin{table}[H]
+\caption{共同筛选的执行顺序。动量与质量单位为 GeV，分支含义见附录~\ref{app:fields}。}
+\label{tab:cuts}
+\small
+\renewcommand{\arraystretch}{1.1}
+\begin{tabularx}{\linewidth}{@{}p{.23\linewidth}Y@{}}
+\toprule
+步骤 & 实际条件及目的 \\
+\midrule
+\textbf{事件触发} & \texttt{trigE} 或 \texttt{trigM} 为真，要求事件通过电子或缪子触发。 \\
+\midrule
+\textbf{轻子品质} & 依次执行以下条件，每步至少保留四个轻子，以筛出符合要求的提示轻子候选： \\
+味道、鉴别 & $|\texttt{lep\_type}|\in\{11,13\}$；\texttt{lep\_isTightID=true}。 \\
+径迹、量能器隔离 & $p_T>0$；依次要求 \texttt{lep\_ptcone30}/\texttt{lep\_pt}$<0.3$、
+\texttt{lep\_etcone20}/\texttt{lep\_pt}$<0.3$，抑制周围活动较多的对象。 \\
+横向、纵向碰撞参数 & $|d_0/\sigma(d_0)|<$ 5（电子）或 3（缪子）；
+$|z_0/\cosh\eta|<0.5$ mm，限制相对主顶点的位移。 \\
+\midrule
+\textbf{四轻子候选} & 以下条件依次定义共同分析总体： \\
+多重数、触发匹配 & 品质筛选后恰好四个轻子；至少一个 \texttt{lep\_trigMatched=true}。
+原始 \texttt{lep\_n} 可以大于四。 \\
+排序动量、接受度 & 按 $p_T$ 降序，依次 $\geq20,15,10,7$；
+电子 $|\eta|<2.47$、缪子 $|\eta|<2.7$，限定运动学及探测器接受范围。 \\
+电荷、配对 & 总电荷为零；存在两个互不重叠的同味异号（SFOS）对，构造 $ZZ^*$ 候选。 \\
+轻子对质量 & 所有 SFOS 质量 $>5$；$50<m_{Z1}<106$、$12<m_{Z2}<115$，排除低质量对并限定候选。 \\
+四轻子质量、末态 & $105\leq m_{4\ell}<140$；随后要求两个电子和两个缪子，限定本项目研究范围。 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\Needspace{12\baselineskip}
+\subsection{文献依据与项目差异}
+本项目参考已发表分析的选择思路，但没有逐项复现其完整程序。
+ATLAS 13 TeV 分析\cite{ATLAS13} 第 5.1--5.2 节支持接受度、
+前三个动量尺度、SFOS 配对、$Z$ 质量窗口及横向碰撞参数条件的物理动机；
+$12\gev$ 的次主导质量下限适用于这里的 $m_{4\ell}<140\gev$。
+
+项目选择与文献程序的主要差异如下：
+\begin{itemize}[itemsep=1pt,topsep=2pt]
+\item 文献使用宽松电子鉴别及详细缪子要求；本项目统一使用 tight-ID，工作点等价性未确认。
+\item 本项目动量阈值允许取等号，第四轻子统一 $p_T\geq7$；文献分别要求电子 $E_T>7$、缪子 $p_T>5$，部分缪子另有要求。
+\item 本项目两种隔离均 $<30\%$；文献径迹隔离 $<15\%$，量能器隔离电子 $<20\%$、缪子 $<30\%$，且有额外锥及修正规定。
+\item 本项目仅取恰好四个合格轻子的 $2e2\mu$ 道；未复现文献的多候选、角分离等完整程序。该道的 $Z$ 窗口已比 $5\gev$ 条件更严格。
+\end{itemize}
+官方教育示例\cite{HZZCuts,HZZAnalysis}支持部分多重数、电荷、味道和动量规则，但其隔离函数调用已注释掉。
+Run-1 文献\cite{ATLASRun1}支持触发匹配原则。
+tight-ID 工作点及 $|z_0\sin\theta|<0.5$ mm 条件的确切外部依据仍待核实，本文将它们列为项目固定选择，
+不据此声称复现已发表测量。
+\FloatBarrier
+
+\Needspace{22\baselineskip}
+\section{误差计算与图中标记}\label{app:errors}
+
+
+\subsection{共享事件下的保留率误差}
+筛选后事件是筛选前事件的子集，保留率误差需要计入两项产额之间的协方差。
+对信号或背景分别计算，记第 $g$ 个物理事件组在筛选前和高分类别的贡献为 $T_g$、$H_g$，
+总产额为 $T=\sum_g T_g$、$H=\sum_g H_g$，保留率为 $R=H/T$。
+按正文采用的独立事件组 Poisson 型方差约定，有
+\[
+ V_T=\sum_g T_g^2,\qquad V_H=\sum_g H_g^2,\qquad C_{HT}=\sum_g H_gT_g.
+\]
+其中 $V_T$、$V_H$ 为方差估计，$C_{HT}$ 为共享事件组贡献给出的协方差估计。
+在 $T>0$ 时，一阶误差传播给出
+\[
+ \sigma_R^2\simeq\frac{V_H}{T^2}+\frac{H^2V_T}{T^4}-\frac{2H C_{HT}}{T^3}.
+\]
+对方差开平方并乘以 100，得到表中以百分数展示的保留率误差。
+归一化质量谱同样需要计入分箱产额与总产额之间的协方差。
+该公式说明已有汇总的误差约定，不为删组差值提供新的误差条或显著性检验。
+
+\subsection{质量箱的统计支持标记}
+阴影用来提示哪些质量箱的 MC 估计需要谨慎解读。对每个箱，分别检查筛选前和高分类别；
+只要其中一种选择满足以下任一条件，就将该箱标为阴影：
+\begin{enumerate}[leftmargin=1.7em,itemsep=2pt]
+\item 没有事件组。
+\item 带符号产额 $Y$ 或分组方差 $V$ 非正。
+\item 带符号有效计数 $N_{\rm eff}=Y^2/V<20$。
+\item 抵消比 $\rho=|Y|/\sum_i|u_i|<0.2$。
+\end{enumerate}
+其中 $u_i$ 为评估产额权重，$V$ 为该箱各事件组贡献的平方和。
+计算 $N_{\rm eff}$ 是为了检查带权样本的统计支持；计算 $\rho$ 是为了检查正负权重抵消。
+$\rho$ 很小时，带符号产额相对于绝对权重和很小，说明正负贡献抵消较强。
+归一化谱形沿用相同标记。阴影表示上述检查条件被触发，不是产额的误差区间或置信带。
+
+\subsection{归一化谱形的总量支持条件}\label{app:shape-support}
+\texttt{mass\_spectra} 在输出归一化谱形前，还分别检查筛选前、后两条曲线的总量。
+对每条曲线，用总产额 $Y_{\rm total}$、按事件组投影得到的总方差 $V_{\rm total}$ 和绝对权重和计算
+$N_{\rm eff}=Y_{\rm total}^2/V_{\rm total}$ 与 $\rho=|Y_{\rm total}|/\sum_i|u_i|$。
+两条曲线均须满足总产额为正、$N_{\rm eff}\geq20$、$\rho\geq0.2$，否则记录归一化不受支持并不输出相应份额。
+总方差包含质量箱之间的分组协方差；这些总量条件与前述逐箱阴影标记分别检查。
+
+\section{实现细节与复现}\label{app:network}
+
+
+\subsection{模型与汇总计算}
+模型类 \texttt{ResearchClassifier} 定义于 \nolinkurl{src/higgsml/modeling/discriminants.py}，
+训练流程位于 \nolinkurl{src/higgsml/draft_v2/training.py}，超参数由冻结协议绑定。
+网络在 CPU 上以 32 位浮点数训练，损失通过 \texttt{binary\_cross\_entropy\_with\_logits}
+直接从实数输出计算，以避免先计算 sigmoid 再取对数带来的数值问题。
+
+图表由已有汇总计算：Python 的 \texttt{json} 读取记录，NumPy 计算比例、逐种子差值和汇总，Matplotlib 绘图。
+复现需先核对报告、冻结产物、协议的身份及十五个模型的完整性，
+再从 \texttt{results.json} 读取高、低分类别的产额，检查其和与共同筛选前产额的一致性。
+保留率与信背比使用未舍入产额计算，逐种子作差后取中位数及最小至最大范围，最后进行展示舍入：
+产额四位小数、百分数和百分点差两位小数、信背比及其差三位小数。
+缺少种子或指标无效时须标记，不删除失败结果后重新汇总。
+构建入口见 \nolinkurl{paper/draft-v2/README.md}。
+
+\subsection{隐藏层操作}\label{app:layers}
+全连接层组合前一层输出，第一层接收标准化后的输入，后续层接收前一隐藏层输出。
+训练调整连接权重、偏置及归一化层的可学习参数。
+LayerNorm 在同一事件的隐藏层数值之间作归一化，再施加可学习的缩放和平移，
+其统计量不同于使用整个训练集拟合的输入标准化统计量。
+SiLU 将输入 $a$ 变为 $a/(1+e^{-a})$，提供非线性变换；若所有层均为线性变换，多层可合并为一个线性变换。
+前两个隐藏层的 Dropout 在训练时以 0.1 的概率将输出置零，其余输出按 $1/0.9$ 缩放，
+以减少对少数中间节点的依赖。验证与最终评估时关闭 Dropout。
+
+\subsection{物理归一化设置}\label{app:normalization}
+项目不再另乘 $k$ 因子或过滤效率（配置均为 1）；有效截面中分支比与过滤效率的具体分解仍待生产说明核实，不能重复乘入。
+当前也未乘堆积、轻子和触发尺度因子，与官方示例\cite{HZZAnalysis}有别，不能据此复现其产额。
+这些归一化设置限定了绝对产额的物理解释范围。
+
+\subsection{阈值公式与教学示例}
+\label{app:threshold}
+将验证背景按分数从小到大排序，记物理权重为 $w_i$、绝对权重为 $a_i=|w_i|$，下标 $(i)$ 表示排序位置。
+第~\ref{sec:threshold}~节的阈值规则为
+\[
+ k=\min\left\{j:\sum_{i=1}^{j}a_{(i)}\geq\frac12\sum_i a_i\right\},
+ \qquad t=s_{(k)}.
+\]
+阈值取实际分数 $s_{(k)}$，不插值，同分事件整体归类。
+累计权重可以跨过总权重的一半，因此验证集高分绝对权重占比也不必恰为一半。
+此外，验证集与评估集包含不同事件，最终产额使用带符号权重，而阈值使用绝对权重，
+这些差异共同解释了评估背景保留率不统一等于 50\%。
+
+\Needspace{9\baselineskip}
+\textbf{教学示例（非实际运行数据）。} 假设五个验证背景事件的有序分数为
+$0.10,0.30,0.60,0.80,0.90$，对应绝对权重为 $1,2,1,4,2$。
+总权重为 10，一半为 5。依次累加得到 $1,3,4,8,10$，第一次达到 5 时对应的分数为 0.80，因此 $t=0.80$。
+按 $s\geq t$ 筛选后，分数 0.80 和 0.90 的事件进入高分类别，绝对权重占比为 $6/10=60\%$。
+该例中累计权重跨过一半，故高分类别保留 60\% 的绝对权重；这只说明规则的离散性，不代表实际运行结果。
+\FloatBarrier
+
+\Needspace{16\baselineskip}
+\section{结果来源与历史补充}\label{app:provenance}
+
+\subsection{当前结果来源}
+正文沿用 2026 年 11 月 8 日证据记录列出的结果，记录中的报告路径为
+\nolinkurl{runs/h4l-draft-v2-draft001/report/}，报告身份为
+\nolinkurl{a7e610a163e5d155705014201b7ee330323e3bf69309e0e89b2496edba5d4317}，
+绑定协议 \nolinkurl{config/protocols/h4l_draft_v2.json}。
+2026 年 11 月 8 日的既有证据记录核对了模型与汇总的身份、文件校验、数值一致性和文稿构建，
+没有重新审计原始事件载荷。详细记录见 \nolinkurl{paper/draft-v2/BASIC-20261108-EVIDENCE.md}。
+文献及样本参数沿用 2026 年 10 月 30 日和 11 月 1 日的核对记录。
+本文的数值来源保持上述身份；文稿修订不更新冻结分析或改变探索性资格。
+CERN 发布记录将该集合限定于教育用途，不适用于科学出版，本文据此保持教育与技术研究范围。
+
+\subsection{当前工作目录的可复核范围}\label{app:availability}
+2026 年 11 月 15 日检查当前 HiggsML 工作目录时，上述同名运行仅保留准备、训练和冻结阶段，
+未找到相应评估与报告目录。当前准备和冻结身份分别以 \texttt{460ec2b5}、\texttt{a1303c3f} 开头，
+与既有证据记录所绑定的产物不同，因此不能将它们替代为正文数值的来源。
+
+本次核对了受控 MC 文件的校验值和 ROOT 元数据，检查了当前实现中的筛选、输入分组、样本划分、
+权重、网络训练、阈值和谱形误差公式，并运行相关的软件测试。
+正文十五行模型指标和十二行删组差值与既有证据表的算术一致；
+该核对不等同于从缺失的未舍入结果、事件和模型绑定中重新推导全部数值。
+现有表格与图件保留其历史含义，本次检查不构成端到端数值重现或独立物理验证。
+完整复核仍需恢复上述精确身份的结果包及其上游绑定，不能仅依靠同名目录或近似相同的数值。
+
+\subsection{历史统计方法}\label{app:interval}
+历史 draft001 与 validation001 曾研究区间宽度，使用的方法包括模型期望观测、剖面似然区间、配对重抽样和模型自生成伪实验。
+其中曾观察到标称区间欠覆盖，尚未建立独立覆盖率校准。
+本文的保留率和信背比不使用这些历史结果，这些诊断也不作为当前运行的验证。
+核对历史材料时需依据产物身份，不能只看运行名称。同名运行对应的产物可以不同；原数值表、身份与限制保存在
+\nolinkurl{paper/draft-v2/DRAFT001-EVIDENCE.md} 及其引用的历史材料中。
+
+\Needspace{28\baselineskip}
+\begingroup
+\small
+\renewcommand{\refname}{本报告参考文献}
+\begin{thebibliography}{9}
+\bibitem{ATLASSimulation}
+ATLAS Collaboration, \emph{The ATLAS Simulation Infrastructure},
+Eur.~Phys.~J.~C \textbf{70}, 823--874 (2010).
+\href{https://doi.org/10.1140/epjc/s10052-010-1429-9}{doi:10.1140/epjc/s10052-010-1429-9};
+\href{https://arxiv.org/abs/1005.4568}{arXiv:1005.4568}。
+ATLAS 通用模拟链条的参考；不作为本文两份教育样本具体生成配置的证明。
+
+\bibitem{OpenData}
+ATLAS Collaboration, \emph{ATLAS 13 TeV samples collection at least four leptons
+(electron or muon), for 2020 Open Data release} (2020).
+\href{https://opendata.cern.ch/record/15005}{CERN Open Data record 15005},
+\href{https://doi.org/10.7483/OPENDATA.ATLAS.2Y1T.TLGL}{doi:10.7483/OPENDATA.ATLAS.2Y1T.TLGL}.
+两份模拟数据及发布前宽松预筛选说明的来源；使用限制见记录声明。
+
+\bibitem{ATLAS13}
+ATLAS Collaboration, \emph{Measurement of the Higgs boson coupling properties in
+the $H\to ZZ^*\to4\ell$ decay channel at $\sqrt{s}=13$ TeV with the ATLAS detector},
+JHEP \textbf{03} (2018) 095.
+\href{https://doi.org/10.1007/JHEP03(2018)095}{doi:10.1007/JHEP03(2018)095};
+\href{https://arxiv.org/pdf/1712.02304v2#page=8}{arXiv:1712.02304v2，第 5.1--5.2 节，第 8--9 页}。
+附录~\ref{app:cuts} 中筛选与工作点比较的来源。
+
+\bibitem{HZZCuts}
+ATLAS Open Data outreach tools, \emph{HZZCuts.py}，版本
+\nolinkurl{8ad2015be6d350060c3a183aff5802570bc9ada4}。
+\href{https://github.com/atlas-outreach-data-tools/atlas-outreach-Python-uproot-framework-13tev/blob/8ad2015be6d350060c3a183aff5802570bc9ada4/HZZCuts.py#L2-L33}{固定版本源码，第 2--33 行}。
+多重数、电荷、部分动量条件、味道及可选隔离定义。
+
+\bibitem{HZZAnalysis}
+ATLAS Open Data outreach tools, \emph{HZZAnalysis.py}，版本同文献~\cite{HZZCuts}。
+\href{https://github.com/atlas-outreach-data-tools/atlas-outreach-Python-uproot-framework-13tev/blob/8ad2015be6d350060c3a183aff5802570bc9ada4/HZZAnalysis.py#L140-L168}{固定版本源码，第 140--168 行}。
+事件权重因子、实际施加的筛选及已注释的隔离调用。
+
+\bibitem{ATLASRun1}
+ATLAS Collaboration, \emph{Measurements of Higgs boson production and couplings
+in the four-lepton channel in $pp$ collisions at center-of-mass energies of
+7 and 8 TeV with the ATLAS detector}, Phys.~Rev.~D \textbf{91}, 012006 (2015).
+\href{https://doi.org/10.1103/PhysRevD.91.012006}{doi:10.1103/PhysRevD.91.012006};
+\href{https://arxiv.org/pdf/1408.5191v3#page=7}{arXiv:1408.5191v3，第 5.1 节，印刷页码第 6--7 页}。
+触发匹配原则的参考；不声称其详细阈值和工作点与本项目相同。
+\bibitem{SampleInfo}
+ATLAS Open Data outreach tools, \emph{infofile.py}，版本同文献~\cite{HZZCuts}。
+\href{https://github.com/atlas-outreach-data-tools/atlas-outreach-Python-uproot-framework-13tev/blob/8ad2015be6d350060c3a183aff5802570bc9ada4/infofile.py}{固定版本样本参数表}。
+\texttt{ggH125\_ZZ4lep} 与 \texttt{llll} 条目的 DSID、\texttt{xsec} 和 \texttt{sumw}；
+不提供完整生成器或探测器模拟配置。
+\end{thebibliography}
+\endgroup
+\end{document}
